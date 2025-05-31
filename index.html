@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pong Mejorado</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: white;
+        }
+        #menu {
+            margin-top: 50px;
+        }
+        #canvas {
+            display: none;
+            border: 2px solid white;
+            background: black;
+        }
+        #score {
+            display: none;
+            font-size: 20px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="menu">
+        <h1>Pong Mejorado</h1>
+        <p>Selecciona el modo de juego:</p>
+        <button onclick="iniciarJuego(1)">1 Jugador (Contra la IA)</button>
+        <button onclick="iniciarJuego(2)">2 Jugadores</button>
+    </div>
+    <div id="score">
+        <p>Jugador 1: <span id="score1">0</span> | Jugador 2: <span id="score2">0</span></p>
+    </div>
+    <canvas id="canvas" width="600" height="400"></canvas>
+
+    <script>
+        let modoJuego = 2;
+        let puntos = [0, 0];
+
+        function iniciarJuego(modo) {
+            modoJuego = modo;
+            document.getElementById("menu").style.display = "none";
+            document.getElementById("canvas").style.display = "block";
+            document.getElementById("score").style.display = "block";
+
+            let canvas = document.getElementById("canvas");
+            let ctx = canvas.getContext("2d");
+
+            let pelota = { x: canvas.width / 2, y: canvas.height / 2, dx: 3, dy: 3, tamaño: 10 };
+            let paletas = [
+                { x: 10, y: canvas.height / 2 - 40, ancho: 10, alto: 80, dy: 0 },
+                { x: canvas.width - 20, y: canvas.height / 2 - 40, ancho: 10, alto: 80, dy: 0 }
+            ];
+
+            document.addEventListener("keydown", (event) => {
+                if (event.key === "w") paletas[0].dy = -5;
+                if (event.key === "s") paletas[0].dy = 5;
+                if (modoJuego === 2) {
+                    if (event.key === "ArrowUp") paletas[1].dy = -5;
+                    if (event.key === "ArrowDown") paletas[1].dy = 5;
+                }
+            });
+
+            document.addEventListener("keyup", () => {
+                paletas[0].dy = 0;
+                paletas[1].dy = 0;
+            });
+
+            function actualizar() {
+                pelota.x += pelota.dx;
+                pelota.y += pelota.dy;
+
+                if (pelota.y <= 0 || pelota.y >= canvas.height - pelota.tamaño) pelota.dy *= -1;
+
+                paletas.forEach(paleta => {
+                    paleta.y += paleta.dy;
+                    if (paleta.y < 0) paleta.y = 0;
+                    if (paleta.y > canvas.height - paleta.alto) paleta.y = canvas.height - paleta.alto;
+                });
+
+                if (
+                    (pelota.x <= paletas[0].x + paletas[0].ancho && pelota.y >= paletas[0].y && pelota.y <= paletas[0].y + paletas[0].alto) ||
+                    (pelota.x >= paletas[1].x - pelota.tamaño && pelota.y >= paletas[1].y && pelota.y <= paletas[1].y + paletas[1].alto)
+                ) {
+                    pelota.dx *= -1;
+                }
+
+                if (modoJuego === 1) {
+                    paletas[1].y += (pelota.y - paletas[1].y - paletas[1].alto / 2) * 0.1;
+                }
+
+                if (pelota.x <= 0) {
+                    puntos[1]++;
+                    reiniciarJuego();
+                } else if (pelota.x >= canvas.width) {
+                    puntos[0]++;
+                    reiniciarJuego();
+                }
+
+                document.getElementById("score1").innerText = puntos[0];
+                document.getElementById("score2").innerText = puntos[1];
+
+                if (puntos[0] === 3 || puntos[1] === 3) {
+                    alert(`¡${puntos[0] === 3 ? "Jugador 1" : "Jugador 2"} ha ganado!`);
+                    location.reload();
+                }
+            }
+
+            function reiniciarJuego() {
+                pelota.x = canvas.width / 2;
+                pelota.y = canvas.height / 2;
+                pelota.dx *= -1;
+            }
+
+            function dibujar() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = "white";
+                ctx.fillRect(paletas[0].x, paletas[0].y, paletas[0].ancho, paletas[0].alto);
+                ctx.fillRect(paletas[1].x, paletas[1].y, paletas[1].ancho, paletas[1].alto);
+
+                ctx.fillRect(pelota.x, pelota.y, pelota.tamaño, pelota.tamaño);
+            }
+
+            function bucle() {
+                actualizar();
+                dibujar();
+                requestAnimationFrame(bucle);
+            }
+
+            bucle();
+        }
+    </script>
+</body>
+</html>
